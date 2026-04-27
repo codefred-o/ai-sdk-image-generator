@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { ImageError, ImageResult, ProviderTiming } from "@/lib/image-types";
 import { initializeProviderRecord, ProviderKey } from "@/lib/provider-config";
+import { AspectRatio, GenerateImageRequest } from "@/lib/api-types";
+
+/**
+ * Default aspect ratio for generated images. We standardize on 16:9 for
+ * thumbnail-friendly outputs.
+ */
+const DEFAULT_ASPECT_RATIO: AspectRatio = "16:9";
 
 interface UseImageGenerationReturn {
   images: ImageResult[];
@@ -12,6 +19,7 @@ interface UseImageGenerationReturn {
     prompt: string,
     providers: ProviderKey[],
     providerToModel: Record<ProviderKey, string>,
+    aspectRatio?: AspectRatio,
   ) => Promise<void>;
   resetState: () => void;
   activePrompt: string;
@@ -39,6 +47,7 @@ export function useImageGeneration(): UseImageGenerationReturn {
     prompt: string,
     providers: ProviderKey[],
     providerToModel: Record<ProviderKey, string>,
+    aspectRatio: AspectRatio = DEFAULT_ASPECT_RATIO,
   ) => {
     setActivePrompt(prompt);
     try {
@@ -71,10 +80,11 @@ export function useImageGeneration(): UseImageGenerationReturn {
           `Generate image request [provider=${provider}, modelId=${modelId}]`,
         );
         try {
-          const request = {
+          const request: GenerateImageRequest = {
             prompt,
             provider,
             modelId,
+            aspectRatio,
           };
 
           const response = await fetch("/api/generate-images", {
