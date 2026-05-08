@@ -3,116 +3,67 @@ export interface Suggestion {
   prompt: string;
 }
 
-const artStyles = ["anime", "art nouveau", "ukiyo-e", "watercolor"];
-
-const basePrompts: { text: string; prompt: string }[] = [
+// YouTube-style thumbnail templates
+const youtubeTemplates: { text: string; prompt: string }[] = [
   {
-    text: "Salamander Dusk",
-    prompt: "A salamander at dusk in a forest pond",
+    text: "I Built This in 24 Hours",
+    prompt: "I Built This in 24 Hours - Time lapse of construction project with before/after split screen, shocked face expressing disbelief at speed of completion",
   },
   {
-    text: "Sultry Chicken",
-    prompt:
-      "A sultry chicken peering around the corner from shadows, clearly up to no good",
+    text: "You Won't Believe What Happened",
+    prompt: "You Won't Believe What Happened - Dramatic reaction shot with hands covering mouth, explosive background effects, bright yellow bold text",
   },
   {
-    text: "Cat Vercel",
-    prompt: "A cat launching its website on Vercel",
+    text: "This Changed Everything",
+    prompt: "This Changed Everything - Before/after transformation comparison, person pointing dramatically at screen, arrow graphics showing progression",
   },
   {
-    text: "Red Panda",
-    prompt:
-      "A red panda sipping tea under cherry blossoms at sunset with Mount Fuji in the background",
+    text: "The Secret They Don't Want You to Know",
+    prompt: "The Secret They Don't Want You to Know - Conspiracy theory style with blurred documents, magnifying glass over mysterious symbols, red arrows and circles",
   },
   {
-    text: "Beach Otter",
-    prompt: "A mischievous otter surfing the waves in Bali at golden hour",
+    text: "I Tried It So You Don't Have To",
+    prompt: "I Tried It So You Don't Have To - Split screen showing person trying product/service vs disappointed expression, checkmark and X symbols, bold warning text",
   },
   {
-    text: "Badger Ramen",
-    prompt: "A pensive honey badger eating a bowl of ramen in Osaka",
+    text: "This Is Not Clickbait",
+    prompt: "This Is Not Clickbait - Meta humorous thumbnail with person holding 'NOT CLICKBAIT' sign, exaggerated fake shock expression, ironic bright colors",
   },
   {
-    text: "Zen Frog",
-    prompt:
-      "A frog meditating on a lotus leaf in a tranquil forest pond at dawn, surrounded by fireflies",
+    text: "The Truth About [Topic]",
+    prompt: "The Truth About [Topic] - Serious investigative journalist style with notebook and pen, magnifying glass over documents, dramatic lighting",
   },
   {
-    text: "Macaw Love",
-    prompt:
-      "A colorful macaw delivering a love letter, flying over the Grand Canyon at sunrise",
+    text: "What Happens When You [Action]",
+    prompt: "What Happens When You [Action] - Cause and effect visualization, person performing action with exaggerated results, scientific diagram style overlays",
   },
   {
-    text: "Fox Painting",
-    prompt: "A fox walking through a field of lavender with a golden sunset",
+    text: "[Number] Ways to [Achieve Goal]",
+    prompt: "[Number] Ways to [Achieve Goal] - List format thumbnail with numbered checklist, person demonstrating each method, trophy or achievement graphics",
   },
   {
-    text: "Armadillo Aerospace",
-    prompt:
-      "An armadillo in a rocket at countdown preparing to blast off to Mars",
+    text: "Why [Popular Thing] Is Actually [Controversial Opinion]",
+    prompt: "Why [Popular Thing] Is Actually [Controversial Opinion] - Split screen showing popular opinion vs controversial take, debate-style graphics with versus symbol",
   },
   {
-    text: "Penguin Delight",
-    prompt: "A penguin in pajamas eating ice cream while watching television",
+    text: "I Spent [Amount] On [Thing]",
+    prompt: "I Spent [Amount] On [Thing] - Wallet or piggy bank bursting with money, person holding receipt with shocked expression, luxury items flying around",
   },
   {
-    text: "Echidna Library",
-    prompt:
-      "An echidna reading a book in a cozy library built into the branches of a eucalyptus tree",
+    text: "[Number] Days Without [Habit]",
+    prompt: "[Number] Days Without [Habit] - Calendar with marked days, person showing willpower struggle, progress bar graphic, achievement badge",
   },
   {
-    text: "Capybara Onsen",
-    prompt:
-      "A capybara relaxing in a hot spring surrounded by snow-covered mountains with a waterfall in the background",
+    text: "This [Common Belief] Is Wrong",
+    prompt: "This [Common Belief] Is Wrong - Person holding 'WRONG' stamp over textbook, confusion graphics, lightbulb moment with correct information",
   },
   {
-    text: "Lion Throne",
-    prompt:
-      "A regal lion wearing a crown, sitting on a throne in a jungle palace, with waterfalls in the distance",
+    text: "The [Adjective] [Noun] Ever Made",
+    prompt: "The [Adjective] [Noun] Ever Made - Trophy or award graphic, person holding exceptional item with pride, sparkling effects and rays",
   },
   {
-    text: "Dolphin Glow",
-    prompt:
-      "A dolphin leaping through a glowing ring of bioluminescence under a starry sky",
-  },
-  {
-    text: "Owl Detective",
-    prompt:
-      "An owl wearing a monocle and top hat, solving a mystery in a misty forest at midnight",
-  },
-  {
-    text: "Jellyfish Cathedral",
-    prompt:
-      "A jellyfish floating gracefully in an underwater cathedral made of coral and glass",
-  },
-  {
-    text: "Platypus River",
-    prompt: "A platypus foraging in a river with a sunset in the background",
-  },
-  {
-    text: "Chameleon Urban",
-    prompt:
-      "A chameleon blending into a graffiti-covered wall in an urban jungle",
-  },
-  {
-    text: "Tortoise Oasis",
-    prompt:
-      "A giant tortoise slowly meandering its way to an oasis in the desert",
-  },
-  {
-    text: "Hummingbird Morning",
-    prompt:
-      "A hummingbird sipping nectar from a purple bougainvillea at sunrise, captured mid-flight",
-  },
-  {
-    text: "Polar Bear",
-    prompt:
-      "A polar bear clambering onto an iceberg to greet a friendly harbor seal as dusk falls",
-  },
-  {
-    text: "Lemur Sunbathing",
-    prompt:
-      "A ring-tailed lemur sunbathing on a rock in Madagascar in early morning light",
+    text: "[Person/Character] Reacts To [Topic]",
+    prompt: "[Person/Character] Reacts To [Topic] - Split screen showing reaction face and topic content, expressive emotions with speech bubbles, trending graphics",
   },
 ];
 
@@ -126,13 +77,9 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export function getRandomSuggestions(count: number = 5): Suggestion[] {
-  const shuffledPrompts = shuffle(basePrompts);
-  const shuffledStyles = shuffle(artStyles);
-
-  return shuffledPrompts.slice(0, count).map((item, index) => ({
+  const shuffled = shuffle(youtubeTemplates);
+  return shuffled.slice(0, count).map((item) => ({
     text: item.text,
-    prompt: `${item.prompt}, in the style of ${
-      shuffledStyles[index % shuffledStyles.length]
-    }`,
+    prompt: item.prompt,
   }));
 }
