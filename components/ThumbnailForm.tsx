@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowUp, ArrowUpRight, RefreshCw } from "lucide-react";
 import { getRandomSuggestions, Suggestion } from "@/lib/suggestions";
 import { Spinner } from "@/components/ui/spinner";
@@ -17,19 +17,43 @@ interface ThumbnailFormProps {
   mode: "performance" | "quality";
   onModeChange: (mode: "performance" | "quality") => void;
   suggestions: Suggestion[];
+  /**
+   * Optional pre-filled values provided by an entry-point (YouTube URL fetch
+   * or title inference). When this prop changes the form fields are updated
+   * so the user can review and edit before generating.
+   */
+  prefillValues?: {
+    title?: string;
+    subject?: string;
+    stylePreset?: StylePreset;
+    emotionPreset?: EmotionPreset;
+    overlayText?: string;
+  };
 }
 
 export function ThumbnailForm({
   suggestions: initSuggestions,
   isLoading,
   onSubmit,
+  prefillValues,
 }: ThumbnailFormProps) {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [stylePreset, setStylePreset] = useState<StylePreset | "">("");
   const [emotionPreset, setEmotionPreset] = useState<EmotionPreset | "">("");
+  const [overlayText, setOverlayText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Apply pre-filled values whenever the prefillValues prop changes.
+  useEffect(() => {
+    if (!prefillValues) return;
+    if (prefillValues.title !== undefined) setTitle(prefillValues.title);
+    if (prefillValues.subject !== undefined) setSubject(prefillValues.subject);
+    if (prefillValues.stylePreset !== undefined) setStylePreset(prefillValues.stylePreset);
+    if (prefillValues.emotionPreset !== undefined) setEmotionPreset(prefillValues.emotionPreset);
+    if (prefillValues.overlayText !== undefined) setOverlayText(prefillValues.overlayText);
+  }, [prefillValues]);
 
   const updateSuggestions = () => {
     setSuggestions(getRandomSuggestions());
@@ -95,7 +119,7 @@ export function ThumbnailForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700">Style Preset</label>
-              <Select defaultValue="MrBeast/high-energy" onValueChange={(v) => setStylePreset(v as StylePreset)}>
+              <Select value={stylePreset || "MrBeast/high-energy"} onValueChange={(v) => setStylePreset(v as StylePreset)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a style" />
                 </SelectTrigger>
@@ -113,7 +137,7 @@ export function ThumbnailForm({
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700">Emotion Preset</label>
-              <Select defaultValue="excited" onValueChange={(v) => setEmotionPreset(v as EmotionPreset)}>
+              <Select value={emotionPreset || "excited"} onValueChange={(v) => setEmotionPreset(v as EmotionPreset)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an emotion" />
                 </SelectTrigger>
@@ -128,6 +152,21 @@ export function ThumbnailForm({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-700">
+              Overlay Text{" "}
+              <span className="text-zinc-400 font-normal">(optional)</span>
+            </label>
+            <Textarea
+              value={overlayText}
+              onChange={(e) => setOverlayText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Short punchy text to overlay on the thumbnail"
+              rows={1}
+              className="text-base bg-transparent border-none p-0 resize-none placeholder:text-zinc-500 text-[#111111] focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
           </div>
 
           <div className="flex items-center justify-between pt-2">

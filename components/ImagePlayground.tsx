@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
 import { ThumbnailForm } from "@/components/ThumbnailForm";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
-import { InputRouter, ReferenceImage } from "@/components/InputRouter";
+import { InputRouter, ReferenceImage, FormPrefillValues } from "@/components/InputRouter";
 import {
   MODEL_CONFIGS,
   PROVIDERS,
@@ -44,6 +44,13 @@ export function ImagePlayground({
   const [referenceImage, setReferenceImage] = useState<ReferenceImage | null>(
     null,
   );
+
+  /**
+   * Pre-fill values pushed by the YouTube URL or title-inference entry points.
+   * A new object reference triggers ThumbnailForm's useEffect to apply them.
+   */
+  const [formPrefillValues, setFormPrefillValues] =
+    useState<FormPrefillValues | undefined>(undefined);
 
   const toggleView = () => {
     setShowProviders((prev) => !prev);
@@ -98,10 +105,15 @@ export function ImagePlayground({
       <div className="max-w-7xl mx-auto">
         <Header />
 
-        {/* Input mode selector: selfie, reference image, and stub entry points */}
+        {/* Input mode selector: selfie, reference image, YouTube URL, title inference, and stub entry points */}
         <InputRouter
           referenceImage={referenceImage}
           onReferenceImageChange={setReferenceImage}
+          onFormPrefill={(values) =>
+            // Spread into a new object so React always sees a reference change,
+            // which triggers ThumbnailForm's useEffect even for repeated prefills.
+            setFormPrefillValues({ ...values })
+          }
           className="mb-6"
         />
 
@@ -113,6 +125,7 @@ export function ImagePlayground({
           mode={mode}
           onModeChange={handleModeChange}
           suggestions={suggestions}
+          prefillValues={formPrefillValues}
         />
         <>
           {(() => {
