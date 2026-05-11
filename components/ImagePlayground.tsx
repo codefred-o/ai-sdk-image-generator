@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
 import { ThumbnailForm } from "@/components/ThumbnailForm";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
+import { InputRouter, ReferenceImage } from "@/components/InputRouter";
 import {
   MODEL_CONFIGS,
   PROVIDERS,
@@ -38,6 +39,12 @@ export function ImagePlayground({
     initializeProviderRecord(true),
   );
   const [mode, setMode] = useState<ModelMode>("performance");
+
+  /** Reference image supplied via the InputRouter (selfie or mood-board). */
+  const [referenceImage, setReferenceImage] = useState<ReferenceImage | null>(
+    null,
+  );
+
   const toggleView = () => {
     setShowProviders((prev) => !prev);
   };
@@ -69,12 +76,19 @@ export function ImagePlayground({
   /**
    * ThumbnailForm already calls buildPrompt internally and passes the
    * fully-formed, provider-optimised prompt string here. Forward it
-   * directly to all active providers.
+   * directly to all active providers, together with any reference image the
+   * user has uploaded via the InputRouter.
    */
   const handlePromptSubmit = (prompt: string) => {
     const activeProviders = PROVIDER_ORDER.filter((p) => enabledProviders[p]);
     if (activeProviders.length > 0) {
-      startGeneration(prompt, activeProviders, providerToModel);
+      startGeneration(
+        prompt,
+        activeProviders,
+        providerToModel,
+        undefined,
+        referenceImage,
+      );
     }
     setShowProviders(false);
   };
@@ -83,6 +97,14 @@ export function ImagePlayground({
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <Header />
+
+        {/* Input mode selector: selfie, reference image, and stub entry points */}
+        <InputRouter
+          referenceImage={referenceImage}
+          onReferenceImageChange={setReferenceImage}
+          className="mb-6"
+        />
+
         <ThumbnailForm
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}
