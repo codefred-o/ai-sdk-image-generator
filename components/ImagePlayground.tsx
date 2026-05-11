@@ -100,6 +100,19 @@ export function ImagePlayground({
     setShowProviders(false);
   };
 
+  // Add retry function for specific provider
+  const handleRetryProvider = (provider: ProviderKey) => {
+    if (activePrompt && providerToModel[provider]) {
+      startGeneration(
+        activePrompt,
+        [provider],
+        { [provider]: providerToModel[provider] } as Record<ProviderKey, string>,
+        undefined,
+        referenceImage,
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -153,6 +166,7 @@ export function ImagePlayground({
                   modelId,
                   timing,
                   failed: failedProviders.includes(key),
+                  onRetry: failedProviders.includes(key) ? () => handleRetryProvider(key) : undefined,
                 };
               });
 

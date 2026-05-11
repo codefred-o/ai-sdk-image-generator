@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud, X, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Maximum allowed upload size: 10 MB */
@@ -39,6 +39,7 @@ export function ImageUploader({
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [internalPreview, setInternalPreview] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Prefer the controlled `value`; fall back to local state for uncontrolled usage.
@@ -47,14 +48,19 @@ export function ImageUploader({
   const processFile = useCallback(
     (file: File) => {
       setError(null);
+      setUploadStatus("Processing image...");
 
       if (!file.type.startsWith("image/")) {
-        setError("Only image files are accepted.");
+        const errorMsg = "Only image files are accepted.";
+        setError(errorMsg);
+        setUploadStatus(`Error: ${errorMsg}`);
         return;
       }
 
       if (file.size > MAX_SIZE_BYTES) {
-        setError("File is too large. Maximum size is 10 MB.");
+        const errorMsg = "File is too large. Maximum size is 10 MB.";
+        setError(errorMsg);
+        setUploadStatus(`Error: ${errorMsg}`);
         return;
       }
 
@@ -63,9 +69,12 @@ export function ImageUploader({
         const result = e.target?.result as string;
         setInternalPreview(result);
         onImageChange(result);
+        setUploadStatus("Image uploaded successfully");
       };
       reader.onerror = () => {
-        setError("Failed to read the file. Please try again.");
+        const errorMsg = "Failed to read the file. Please try again.";
+        setError(errorMsg);
+        setUploadStatus(`Error: ${errorMsg}`);
       };
       reader.readAsDataURL(file);
     },
@@ -75,11 +84,13 @@ export function ImageUploader({
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
+    setUploadStatus("Drop image here");
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+    setUploadStatus("");
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -105,17 +116,35 @@ export function ImageUploader({
     setInternalPreview(null);
     setError(null);
     onImageChange(null);
+    setUploadStatus("Image removed");
   };
 
   return (
     <div className={cn("w-full", className)}>
+      {/* Screen reader announcements */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {uploadStatus}
+      </div>
+
       <div
         role="button"
         tabIndex={0}
-        aria-label={label}
+        aria-label={preview ? "Image uploaded. Press Enter to remove" : label}
+        aria-describedby="upload-instructions"
         onClick={preview ? undefined : handleClick}
         onKeyDown={(e) => {
-          if (!preview && (e.key === "Enter" || e.key === " ")) handleClick();
+          if (!preview && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            handleClick();
+          }
+          if (preview && (e.key === "Enter" || e.key === "Delete")) {
+            e.preventDefault();
+            handleRemove(e as any);
+          }
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -128,6 +157,7 @@ export function ImageUploader({
             : !preview
               ? "border-zinc-300 bg-zinc-50 hover:border-zinc-400 hover:bg-zinc-100"
               : "",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2",
         )}
       >
         {preview ? (
@@ -140,14 +170,19 @@ export function ImageUploader({
               className="w-full rounded-xl object-cover"
               style={{ maxHeight: 240 }}
             />
-            <button
-              type="button"
-              onClick={handleRemove}
-              aria-label="Remove image"
-              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2 absolute top-2 right-2">
+              <span className="bg-green-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <CheckCircle className="h-4 w-4" />
+              </span>
+              <button
+                type="button"
+                onClick={handleRemove}
+                aria-label="Remove uploaded image"
+                className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80 focus:opacity-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ) : (
           /* ── Empty / drag state ────────────────────────────────────── */
@@ -159,7 +194,7 @@ export function ImageUploader({
               )}
             />
             <p className="text-sm font-medium text-zinc-700">{label}</p>
-            <p className="mt-1 text-xs text-zinc-400">{subLabel}</p>
+            <p className="mt-1 text-xs text-zinc-400" id="upload-instructions">{subLabel}</p>
           </>
         )}
       </div>
@@ -171,7 +206,7 @@ export function ImageUploader({
         accept="image/*"
         className="sr-only"
         onChange={handleInputChange}
-        aria-hidden="true"
+        aria-label="Choose image file"
       />
 
       {/* Error message */}

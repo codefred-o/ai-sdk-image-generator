@@ -35,6 +35,7 @@ interface ModelSelectProps {
   timing?: ProviderTiming;
   failed?: boolean;
   modelId: string;
+  onRetry?: () => void;
 }
 
 const PROVIDER_ICONS = {
@@ -62,6 +63,7 @@ export function ModelSelect({
   timing,
   failed,
   modelId,
+  onRetry,
 }: ModelSelectProps) {
   const Icon = PROVIDER_ICONS[providerKey];
 
@@ -144,6 +146,7 @@ export function ModelSelect({
           image={image}
           timing={timing}
           failed={failed}
+          onRetry={onRetry}
         />
       </CardContent>
     </Card>

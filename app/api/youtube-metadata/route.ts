@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   if (!url || url.trim() === "") {
     return NextResponse.json(
-      { error: "Missing required query parameter: url" },
+      { error: "Please provide a YouTube URL." },
       { status: 400 }
     );
   }
@@ -37,8 +37,19 @@ export async function GET(req: NextRequest) {
     const isClientError =
       outcome.error.includes("valid YouTube URL") ||
       outcome.error.includes("not found");
+    
+    // Make error messages more user-friendly
+    let userError = outcome.error;
+    if (outcome.error.includes("valid YouTube URL")) {
+      userError = "Please enter a valid YouTube URL (e.g., youtube.com/watch?v=...)";
+    } else if (outcome.error.includes("not found")) {
+      userError = "Could not find this YouTube video. Please check the URL and try again.";
+    } else {
+      userError = "Unable to fetch video information. Please try again in a moment.";
+    }
+    
     return NextResponse.json(
-      { error: outcome.error },
+      { error: userError },
       { status: isClientError ? 400 : 502 }
     );
   }

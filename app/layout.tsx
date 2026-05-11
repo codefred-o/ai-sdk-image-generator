@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { cn } from "@/lib/utils";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,15 +22,35 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="font-sans antialiased">
-        {children}
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Generate stunning YouTube thumbnails with AI-powered image generation across multiple providers. Create eye-catching thumbnails in seconds." />
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+      <body
+        className={cn(
+          "min-h-screen font-sans antialiased",
+          geistSans.variable,
+          geistMono.variable,
+        )}
+      >
+        <a 
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-black text-white px-4 py-2 rounded-md z-50"
+        >
+          Skip to main content
+        </a>
+        <main id="main-content">
+          {children}
+        </main>
         <Analytics />
       </body>
     </html>
-  );
+  )
 }
