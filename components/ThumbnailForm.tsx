@@ -4,7 +4,7 @@ import { getRandomSuggestions, Suggestion } from "@/lib/suggestions";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { SelectTrigger, SelectValue, SelectContent, SelectItem, SelectLabel, SelectSeparator } from "@/components/ui/select";
+import { SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { buildPrompt } from "@/lib/prompt-builder";
 import { StylePreset, EmotionPreset } from "@/lib/prompt-builder";
@@ -100,13 +100,13 @@ export function ThumbnailForm({
                   <SelectValue placeholder="Select a style" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Style Presets</SelectLabel>
-                  <SelectSeparator />
-                  <SelectItem value="MrBeast/high-energy">MrBeast/high-energy</SelectItem>
-                  <SelectItem value="tutorial/clean">Tutorial/Clean</SelectItem>
-                  <SelectItem value="gaming/dynamic">Gaming/Dynamic</SelectItem>
-                  <SelectItem value="vlog/aesthetic">Vlog/Aesthetic</SelectItem>
-                  <SelectItem value="tech-explainer">Tech Explainer</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="MrBeast/high-energy">MrBeast / High Energy</SelectItem>
+                    <SelectItem value="tutorial/clean">Tutorial / Clean</SelectItem>
+                    <SelectItem value="gaming/dynamic">Gaming / Dynamic</SelectItem>
+                    <SelectItem value="vlog/aesthetic">Vlog / Aesthetic</SelectItem>
+                    <SelectItem value="tech-explainer">Tech Explainer</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -118,13 +118,13 @@ export function ThumbnailForm({
                   <SelectValue placeholder="Select an emotion" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Emotion Presets</SelectLabel>
-                  <SelectSeparator />
-                  <SelectItem value="shocked">Shocked</SelectItem>
-                  <SelectItem value="excited">Excited</SelectItem>
-                  <SelectItem value="confident">Confident</SelectItem>
-                  <SelectItem value="curious">Curious</SelectItem>
-                  <SelectItem value="intense">Intense</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="shocked">Shocked</SelectItem>
+                    <SelectItem value="excited">Excited</SelectItem>
+                    <SelectItem value="confident">Confident</SelectItem>
+                    <SelectItem value="curious">Curious</SelectItem>
+                    <SelectItem value="intense">Intense</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
