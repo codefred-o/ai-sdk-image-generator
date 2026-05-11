@@ -4,7 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { fireworks } from "@ai-sdk/fireworks";
 import { replicate } from "@ai-sdk/replicate";
 import { vertex } from "@ai-sdk/google-vertex/edge";
-import { ProviderKey } from "@/lib/provider-config";
+import { ProviderKey, supportsImg2Img } from "@/lib/provider-config";
 import { AspectRatio, GenerateImageRequest } from "@/lib/api-types";
 
 /**
@@ -113,9 +113,52 @@ const withTimeout = <T>(
   ]);
 };
 
+/**
+ * Extracts the raw base64 bytes (without the `data:<mime>;base64,` prefix)
+ * from a data URL, or returns the string unchanged if it is already raw base64.
+ */
+const stripDataUrlPrefix = (dataUrl: string): string => {
+  const commaIdx = dataUrl.indexOf(",");
+  return commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+};
+
+/**
+ * Builds the `providerOptions` object to forward a reference image to
+ * providers that support img2img.
+ *
+ * - **Replicate** – passes the image as `image` inside the model input.
+ *   The FLUX family and SD 3.5 all accept a base64-encoded `image` field for
+ *   img2img conditioning.
+ * - **Fireworks** – passes the image as `init_image` (base64) and sets a
+ *   default `image_strength` of 0.6 (how much to preserve from the input).
+ *
+ * OpenAI and Vertex are text-only in this release and receive no image params.
+ */
+const buildImg2ImgProviderOptions = (
+  provider: ProviderKey,
+  rawBase64: string
+): Record<string, unknown> => {
+  if (provider === "replicate") {
+    return {
+      replicate: {
+        image: rawBase64,
+      },
+    };
+  }
+  if (provider === "fireworks") {
+    return {
+      fireworks: {
+        init_image: rawBase64,
+        image_strength: 0.6,
+      },
+    };
+  }
+  return {};
+};
+
 export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
-  const { prompt, provider, modelId, aspectRatio } =
+  const { prompt, provider, modelId, aspectRatio, referenceImage, referenceMode } =
     (await req.json()) as GenerateImageRequest;
 
   try {
@@ -127,6 +170,34 @@ export async function POST(req: NextRequest) {
 
     const config = providerConfig[provider];
     const dimensionParams = getDimensionParams(provider, modelId, aspectRatio);
+
+    /**
+     * Determine whether this provider/model pair should receive the reference
+     * image for img2img conditioning.
+     *
+     * Rules:
+     *  1. A reference image must have been supplied by the client.
+     *  2. The selected model on this provider must support img2img
+     *     (see `supportsImg2Img` in provider-config).
+     *  3. OpenAI and Vertex always run text-only for comparison — even when
+     *     they eventually gain img2img support this flag gates the current PR.
+     */
+    const useImg2Img =
+      !!referenceImage &&
+      supportsImg2Img(provider, modelId) &&
+      provider !== "openai" &&
+      provider !== "vertex";
+
+    const rawBase64 = useImg2Img
+      ? stripDataUrlPrefix(referenceImage as string)
+      : null;
+
+    if (referenceImage) {
+      console.log(
+        `Reference image present [requestId=${requestId}, provider=${provider}, mode=${referenceMode ?? "none"}, img2img=${useImg2Img}]`
+      );
+    }
+
     const startstamp = performance.now();
     const generatePromise = generateImage({
       model: config.createImageModel(modelId),
@@ -136,7 +207,13 @@ export async function POST(req: NextRequest) {
         seed: Math.floor(Math.random() * 1000000),
       }),
       // Vertex AI only accepts a specified seed if watermark is disabled.
-      providerOptions: { vertex: { addWatermark: false } },
+      providerOptions: {
+        vertex: { addWatermark: false },
+        // Merge img2img params for supported providers — empty object for others.
+        ...(useImg2Img && rawBase64
+          ? buildImg2ImgProviderOptions(provider, rawBase64)
+          : {}),
+      },
     }).then(({ image, warnings }) => {
       if (warnings?.length > 0) {
         console.warn(
@@ -145,7 +222,7 @@ export async function POST(req: NextRequest) {
         );
       }
       console.log(
-        `Completed image request [requestId=${requestId}, provider=${provider}, model=${modelId}, elapsed=${(
+        `Completed image request [requestId=${requestId}, provider=${provider}, model=${modelId}, img2img=${useImg2Img}, elapsed=${(
           (performance.now() - startstamp) /
           1000
         ).toFixed(1)}s].`
