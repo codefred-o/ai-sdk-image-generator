@@ -156,8 +156,10 @@ export function YouTubeUrlInput({
             onKeyDown={handleKeyDown}
             placeholder="https://youtube.com/watch?v=…"
             aria-label="YouTube URL"
+            aria-describedby="youtube-url-description"
+            aria-invalid={fetchState === "error"}
             className={cn(
-              "w-full rounded-lg border bg-white py-2 pl-9 pr-9 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 transition-colors",
+              "w-full rounded-lg border bg-white py-3 sm:py-2 pl-9 pr-9 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 transition-colors min-h-[48px] sm:min-h-0",
               fetchState === "error"
                 ? "border-red-300 focus:ring-red-200"
                 : fetchState === "success"
@@ -165,12 +167,15 @@ export function YouTubeUrlInput({
                   : "border-zinc-200 focus:ring-zinc-300"
             )}
           />
+          <span id="youtube-url-description" className="sr-only">
+            Enter a YouTube video URL to auto-fill the form with the video's metadata
+          </span>
           {url && (
             <button
               type="button"
               onClick={handleClear}
-              aria-label="Clear URL"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+              aria-label="Clear YouTube URL"
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-zinc-400 hover:text-zinc-600 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -182,8 +187,9 @@ export function YouTubeUrlInput({
           onClick={() => handleFetch(url)}
           disabled={!isYouTubeUrl(url) || fetchState === "loading"}
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-            "bg-zinc-900 text-white hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            "flex items-center gap-1.5 rounded-lg px-4 py-3 sm:py-2 text-sm font-medium transition-colors min-h-[48px] sm:min-h-0",
+            "bg-zinc-900 text-white hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
           )}
         >
           {fetchState === "loading" ? (

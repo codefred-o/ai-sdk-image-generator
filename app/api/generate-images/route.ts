@@ -158,13 +158,23 @@ const buildImg2ImgProviderOptions = (
 
 export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
-  const { prompt, provider, modelId, aspectRatio, referenceImage, referenceMode } =
-    (await req.json()) as GenerateImageRequest;
+  let body: GenerateImageRequest;
+  
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request format. Please refresh and try again." },
+      { status: 400 }
+    );
+  }
+  
+  const { prompt, provider, modelId, aspectRatio, referenceImage, referenceMode } = body;
 
   try {
     if (!prompt || !provider || !modelId || !providerConfig[provider]) {
-      const error = "Invalid request parameters";
-      console.error(`${error} [requestId=${requestId}]`);
+      const error = "Some information is missing. Please fill in all fields and try again.";
+      console.error(`Invalid request parameters [requestId=${requestId}]`);
       return NextResponse.json({ error }, { status: 400 });
     }
 
@@ -245,10 +255,24 @@ export async function POST(req: NextRequest) {
       `Error generating image [requestId=${requestId}, provider=${provider}, model=${modelId}]: `,
       error
     );
+    
+    // Provide more helpful error messages based on error type
+    let userMessage = "Something went wrong while generating your image. Please try again.";
+    
+    if (error instanceof Error) {
+      if (error.message === "Request timed out") {
+        userMessage = "The image generation is taking longer than expected. Please try again with a simpler prompt or different model.";
+      } else if (error.message.includes("API key") || error.message.includes("authentication")) {
+        userMessage = "There's an issue with the service configuration. Please try a different provider.";
+      } else if (error.message.includes("rate limit")) {
+        userMessage = "Too many requests. Please wait a moment and try again.";
+      } else if (error.message.includes("content policy")) {
+        userMessage = "Your request couldn't be processed due to content restrictions. Please modify your prompt and try again.";
+      }
+    }
+    
     return NextResponse.json(
-      {
-        error: "Failed to generate image. Please try again later.",
-      },
+      { error: userMessage },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { Camera, ImageIcon, Type, Wand2, Sliders, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageUploader } from "@/components/ImageUploader";
@@ -118,6 +118,8 @@ export function InputRouter({
   className,
 }: InputRouterProps) {
   const [activeTab, setActiveTab] = useState<InputMode>("selfie");
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const handleTabChange = (tab: InputMode) => {
     setActiveTab(tab);
@@ -127,6 +129,53 @@ export function InputRouter({
       onReferenceImageChange(null);
     }
   };
+
+  // Keyboard navigation for tabs
+  const handleTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    const tabs = TABS.filter(tab => tab.implemented);
+    let newIndex = currentIndex;
+
+    switch (e.key) {
+      case "ArrowLeft":
+        e.preventDefault();
+        newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+        break;
+      case "Home":
+        e.preventDefault();
+        newIndex = 0;
+        break;
+      case "End":
+        e.preventDefault();
+        newIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    const newTab = tabs[newIndex];
+    handleTabChange(newTab.id);
+    // Focus the new tab
+    const tabButton = tabRefs.current.get(newTab.id);
+    tabButton?.focus();
+  };
+
+  // Scroll active tab into view on mobile
+  useEffect(() => {
+    const activeTabButton = tabRefs.current.get(activeTab);
+    if (activeTabButton && tabListRef.current) {
+      const tabList = tabListRef.current;
+      const tabListRect = tabList.getBoundingClientRect();
+      const tabRect = activeTabButton.getBoundingClientRect();
+      
+      if (tabRect.left < tabListRect.left || tabRect.right > tabListRect.right) {
+        activeTabButton.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [activeTab]);
 
   /** Handles a successful YouTube oEmbed fetch. */
   const handleYouTubeMetadata = (payload: YouTubeMetadataPayload) => {
@@ -159,38 +208,52 @@ export function InputRouter({
     <div className={cn("w-full", className)}>
       {/* ── Tab bar ──────────────────────────────────────────────────── */}
       <div
+        ref={tabListRef}
         role="tablist"
-        aria-label="Input mode"
-        className="flex gap-1 overflow-x-auto rounded-xl bg-zinc-100 p-1"
+        aria-label="Input mode selection"
+        className="flex gap-1 overflow-x-auto scrollbar-hide rounded-xl bg-zinc-100 p-1 snap-x snap-mandatory"
       >
-        {TABS.map(({ id, label, Icon, implemented }) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={activeTab === id}
-            aria-controls={`tabpanel-${id}`}
-            id={`tab-${id}`}
-            type="button"
-            onClick={() => handleTabChange(id)}
-            className={cn(
-              "flex min-w-max flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors",
-              activeTab === id
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700",
-              !implemented && activeTab !== id && "opacity-60",
-            )}
-          >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden sm:inline">{label}</span>
-            {/* On very small viewports show only the icon + a "soon" dot for stubs */}
-            {!implemented && (
-              <span
-                aria-label="Coming soon"
-                className="hidden h-1.5 w-1.5 rounded-full bg-zinc-400 sm:inline-block"
-              />
-            )}
-          </button>
-        ))}
+        {TABS.map(({ id, label, Icon, implemented }, index) => {
+          const implementedTabs = TABS.filter(tab => tab.implemented);
+          const currentIndex = implementedTabs.findIndex(tab => tab.id === id);
+          
+          return (
+            <button
+              key={id}
+              ref={(el) => {
+                if (el) tabRefs.current.set(id, el);
+              }}
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls={`tabpanel-${id}`}
+              aria-disabled={!implemented}
+              id={`tab-${id}`}
+              tabIndex={activeTab === id ? 0 : -1}
+              type="button"
+              onClick={() => implemented && handleTabChange(id)}
+              onKeyDown={(e) => implemented && handleTabKeyDown(e, currentIndex)}
+              className={cn(
+                "flex min-w-[80px] sm:min-w-max flex-1 items-center justify-center gap-1.5 rounded-lg px-2 sm:px-3 py-2.5 sm:py-2 text-xs font-medium transition-all snap-center",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-100",
+                activeTab === id
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-700",
+                !implemented && "opacity-60 cursor-not-allowed",
+                "min-h-[44px] sm:min-h-[36px]"
+              )}
+            >
+              <Icon className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
+              {/* Show "soon" indicator for unimplemented tabs */}
+              {!implemented && (
+                <span
+                  aria-label="Coming soon"
+                  className="h-1.5 w-1.5 rounded-full bg-zinc-400 flex-shrink-0"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Tab panels ───────────────────────────────────────────────── */}
@@ -201,7 +264,8 @@ export function InputRouter({
         id="tabpanel-selfie"
         aria-labelledby="tab-selfie"
         hidden={activeTab !== "selfie"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <p className="mb-3 text-sm text-zinc-600">
           Upload a photo of yourself. Your likeness will be used as the face
@@ -228,7 +292,8 @@ export function InputRouter({
         id="tabpanel-reference"
         aria-labelledby="tab-reference"
         hidden={activeTab !== "reference"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <p className="mb-3 text-sm text-zinc-600">
           Upload a reference image to use as a style or mood-board guide.
@@ -255,7 +320,8 @@ export function InputRouter({
         id="tabpanel-youtube"
         aria-labelledby="tab-youtube"
         hidden={activeTab !== "youtube"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <YouTubeUrlInput onMetadataFetched={handleYouTubeMetadata} />
       </div>
@@ -266,7 +332,8 @@ export function InputRouter({
         id="tabpanel-title-inference"
         aria-labelledby="tab-title-inference"
         hidden={activeTab !== "title-inference"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <TitleInferenceInput onInferred={handleTitleInference} />
       </div>
@@ -277,7 +344,8 @@ export function InputRouter({
         id="tabpanel-text"
         aria-labelledby="tab-text"
         hidden={activeTab !== "text"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <ComingSoon label="Text Only" />
       </div>
@@ -288,7 +356,8 @@ export function InputRouter({
         id="tabpanel-advanced"
         aria-labelledby="tab-advanced"
         hidden={activeTab !== "advanced"}
-        className="mt-4"
+        tabIndex={0}
+        className="mt-4 focus:outline-none"
       >
         <ComingSoon label="Advanced" />
       </div>

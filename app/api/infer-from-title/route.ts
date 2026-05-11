@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json(
-      { error: "Request body must be valid JSON." },
+      { error: "Invalid request format. Please refresh the page and try again." },
       { status: 400 }
     );
   }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   if (typeof title !== "string" || title.trim() === "") {
     return NextResponse.json(
-      { error: "Missing or empty required field: title" },
+      { error: "Please enter a title to generate suggestions." },
       { status: 400 }
     );
   }
@@ -50,8 +50,19 @@ export async function POST(req: NextRequest) {
   if (!outcome.ok) {
     const isClientError =
       outcome.error.includes("empty") || outcome.error.includes("long");
+    
+    // Make error messages more user-friendly
+    let userError = outcome.error;
+    if (outcome.error.includes("empty")) {
+      userError = "Please enter a title to generate suggestions.";
+    } else if (outcome.error.includes("long")) {
+      userError = "The title is too long. Please use a shorter title (under 200 characters).";
+    } else {
+      userError = "Unable to generate suggestions right now. Please try again in a moment.";
+    }
+    
     return NextResponse.json(
-      { error: outcome.error },
+      { error: userError },
       { status: isClientError ? 400 : 500 }
     );
   }

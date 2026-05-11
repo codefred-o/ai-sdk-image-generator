@@ -119,10 +119,12 @@ export function TitleInferenceInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="e.g. I Quit My Job to Build AI Tools for 30 Days"
-          aria-label="Video title"
+          aria-label="Video title for thumbnail inference"
+          aria-describedby="title-inference-description"
+          aria-invalid={inferState === "error"}
           rows={2}
           className={cn(
-            "w-full resize-none rounded-lg border bg-white px-3 py-2 pr-8 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 transition-colors",
+            "w-full resize-none rounded-lg border bg-white px-3 py-3 sm:py-2 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 transition-colors min-h-[80px]",
             inferState === "error"
               ? "border-red-300 focus:ring-red-200"
               : inferState === "success"
@@ -130,12 +132,15 @@ export function TitleInferenceInput({
                 : "border-zinc-200 focus:ring-zinc-300"
           )}
         />
+        <span id="title-inference-description" className="sr-only">
+          Enter a video title and AI will suggest appropriate thumbnail elements
+        </span>
         {title && (
           <button
             type="button"
             onClick={handleClear}
             aria-label="Clear title"
-            className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-600 transition-colors"
+            className="absolute right-1 top-1 p-2 text-zinc-400 hover:text-zinc-600 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -148,8 +153,9 @@ export function TitleInferenceInput({
         onClick={handleInfer}
         disabled={!title.trim() || inferState === "loading"}
         className={cn(
-          "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-          "bg-zinc-900 text-white hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors min-h-[48px]",
+          "bg-zinc-900 text-white hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
         )}
       >
         {inferState === "loading" ? (

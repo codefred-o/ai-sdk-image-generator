@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Download, ImageIcon, AlertCircle, Share } from "lucide-react";
-import { Stopwatch } from "./Stopwatch";
+import { Download, ImageIcon, AlertCircle, Share, RefreshCw } from "lucide-react";
+import { ImageSkeleton } from "./ImageSkeleton";
 import { cn } from "@/lib/utils";
 import { imageHelpers } from "@/lib/image-helpers";
 import { ProviderTiming } from "@/lib/image-types";
@@ -17,6 +17,7 @@ interface ImageDisplayProps {
   fallbackIcon?: React.ReactNode;
   enabled?: boolean;
   modelId: string;
+  onRetry?: () => void;
 }
 
 export function ImageDisplay({
@@ -26,6 +27,7 @@ export function ImageDisplay({
   failed,
   fallbackIcon,
   modelId,
+  onRetry,
 }: ImageDisplayProps) {
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -123,9 +125,16 @@ export function ImageDisplay({
               </span>
             </Button>
             {timing?.elapsed && (
-              <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 shadow">
-                <span className="text-xs text-white/90 font-medium">
+              <div className={cn(
+                "absolute bottom-2 right-2 backdrop-blur-sm rounded-md px-2 py-1 shadow",
+                timing.elapsed > 15000 ? "bg-orange-500/80" : "bg-black/70"
+              )}>
+                <span className={cn(
+                  "text-xs font-medium",
+                  timing.elapsed > 15000 ? "text-white" : "text-white/90"
+                )}>
                   {(timing.elapsed / 1000).toFixed(1)}s
+                  {timing.elapsed > 15000 && " (slow)"}
                 </span>
               </div>
             )}
@@ -133,7 +142,27 @@ export function ImageDisplay({
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {failed ? (
-              fallbackIcon || <AlertCircle className="h-8 w-8 text-red-500" />
+              <div className="flex flex-col items-center gap-3">
+                {fallbackIcon || <AlertCircle className="h-8 w-8 text-red-500" />}
+                <div className="text-center px-4">
+                  <p className="text-sm font-medium text-zinc-700">Generation failed</p>
+                  <p className="text-xs text-zinc-500 mt-1">Unable to generate image with this model</p>
+                </div>
+                {onRetry && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetry();
+                    }}
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Retry
+                  </Button>
+                )}
+              </div>
             ) : image ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -157,10 +186,11 @@ export function ImageDisplay({
                 </Button>
               </>
             ) : timing?.startTime ? (
-              <>
-                {/* <div className="text-zinc-400 mb-2">{provider}</div> */}
-                <Stopwatch startTime={timing.startTime} />
-              </>
+              <ImageSkeleton 
+                showTimer={true}
+                elapsedTime={Date.now() - timing.startTime}
+                className="absolute inset-0"
+              />
             ) : (
               <ImageIcon className="h-12 w-12 text-zinc-300" />
             )}
