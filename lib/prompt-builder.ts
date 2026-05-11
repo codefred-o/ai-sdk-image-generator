@@ -1,4 +1,16 @@
-import { StylePreset, EmotionPreset } from "./provider-config";
+export type StylePreset =
+  | "MrBeast/high-energy"
+  | "tutorial/clean"
+  | "gaming/dynamic"
+  | "vlog/aesthetic"
+  | "tech-explainer";
+
+export type EmotionPreset =
+  | "shocked"
+  | "excited"
+  | "confident"
+  | "curious"
+  | "intense";
 
 interface PromptRequest {
   title: string;

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { ArrowUp, RefreshCw } from "lucide-react";
+import { ArrowUp, ArrowUpRight, RefreshCw } from "lucide-react";
 import { getRandomSuggestions, Suggestion } from "@/lib/suggestions";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { SelectTrigger, SelectValue, SelectContent, SelectItem, SelectLabel, SelectSeparator } from "@/components/ui/select";
+import { SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { buildPrompt } from "@/lib/prompt-builder";
-import { StylePreset, EmotionPreset } from "@/lib/provider-config";
+import { StylePreset, EmotionPreset } from "@/lib/prompt-builder";
 
 interface ThumbnailFormProps {
   onSubmit: (prompt: string) => void;
@@ -26,8 +26,8 @@ export function ThumbnailForm({
 }: ThumbnailFormProps) {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
-  const [stylePreset, setStylePreset] = useStylePreset("");
-  const [emotionPreset, setEmotionPreset] = useEmotionPreset("");
+  const [stylePreset, setStylePreset] = useState<StylePreset | "">("");
+  const [emotionPreset, setEmotionPreset] = useState<EmotionPreset | "">("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -95,36 +95,36 @@ export function ThumbnailForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700">Style Preset</label>
-              <Select defaultValue="MrBeast/high-energy" onValueChange={setStylePreset} className="w-full">
+              <Select defaultValue="MrBeast/high-energy" onValueChange={(v) => setStylePreset(v as StylePreset)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a style" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Style Presets</SelectLabel>
-                  <SelectSeparator />
-                  <SelectItem value="MrBeast/high-energy">MrBeast/high-energy</SelectItem>
-                  <SelectItem value="tutorial/clean">Tutorial/Clean</SelectItem>
-                  <SelectItem value="gaming/dynamic">Gaming/Dynamic</SelectItem>
-                  <SelectItem value="vlog/aesthetic">Vlog/Aesthetic</SelectItem>
-                  <SelectItem value="tech-explainer">Tech Explainer</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="MrBeast/high-energy">MrBeast / High Energy</SelectItem>
+                    <SelectItem value="tutorial/clean">Tutorial / Clean</SelectItem>
+                    <SelectItem value="gaming/dynamic">Gaming / Dynamic</SelectItem>
+                    <SelectItem value="vlog/aesthetic">Vlog / Aesthetic</SelectItem>
+                    <SelectItem value="tech-explainer">Tech Explainer</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700">Emotion Preset</label>
-              <Select defaultValue="excited" onValueChange={setEmotionPreset} className="w-full">
+              <Select defaultValue="excited" onValueChange={(v) => setEmotionPreset(v as EmotionPreset)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an emotion" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Emotion Presets</SelectLabel>
-                  <SelectSeparator />
-                  <SelectItem value="shocked">Shocked</SelectItem>
-                  <SelectItem value="excited">Excited</SelectItem>
-                  <SelectItem value="confident">Confident</SelectItem>
-                  <SelectItem value="curious">Curious</SelectItem>
-                  <SelectItem value="intense">Intense</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="shocked">Shocked</SelectItem>
+                    <SelectItem value="excited">Excited</SelectItem>
+                    <SelectItem value="confident">Confident</SelectItem>
+                    <SelectItem value="curious">Curious</SelectItem>
+                    <SelectItem value="intense">Intense</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -172,15 +172,4 @@ export function ThumbnailForm({
       </div>
     </div>
   );
-}
-
-// Helper hooks for presets
-function useStylePreset(initialValue: StylePreset | "") {
-  const [value, setValue] = useState<StylePreset | "">(initialValue);
-  return [value, setValue] as const;
-}
-
-function useEmotionPreset(initialValue: EmotionPreset | "") {
-  const [value, setValue] = useState<EmotionPreset | "">(initialValue);
-  return [value, setValue] as const;
 }
