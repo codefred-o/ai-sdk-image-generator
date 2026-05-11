@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
-import { PromptInput } from "@/components/PromptInput";
+import { ThumbnailForm } from "@/components/ThumbnailForm";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
 import {
   MODEL_CONFIGS,
@@ -66,10 +66,15 @@ export function ImagePlayground({
     fireworks: selectedModels.fireworks,
   };
 
-  const handlePromptSubmit = (newPrompt: string) => {
+  /**
+   * ThumbnailForm already calls buildPrompt internally and passes the
+   * fully-formed, provider-optimised prompt string here. Forward it
+   * directly to all active providers.
+   */
+  const handlePromptSubmit = (prompt: string) => {
     const activeProviders = PROVIDER_ORDER.filter((p) => enabledProviders[p]);
     if (activeProviders.length > 0) {
-      startGeneration(newPrompt, activeProviders, providerToModel);
+      startGeneration(prompt, activeProviders, providerToModel);
     }
     setShowProviders(false);
   };
@@ -78,7 +83,7 @@ export function ImagePlayground({
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <Header />
-        <PromptInput
+        <ThumbnailForm
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}
           showProviders={showProviders}
@@ -127,7 +132,7 @@ export function ImagePlayground({
                   ))}
                 </div>
                 {activePrompt && activePrompt.length > 0 && (
-                  <div className="text-center mt-4 text-muted-foreground">
+                  <div className="text-center mt-4 text-muted-foreground text-sm">
                     {activePrompt}
                   </div>
                 )}
